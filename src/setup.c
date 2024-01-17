@@ -784,14 +784,14 @@ lf_setup_ports(uint16_t nb_port_queues, const uint16_t lcores[LF_MAX_WORKER],
 
 			/* check if worker runs on a different socket than the receiving
 			 * port */
-			if (socket_id != rte_eth_dev_socket_id(port_id)) {
+			// if (socket_id != rte_eth_dev_socket_id(port_id)) {
 				LF_LOG(WARNING,
-						"Worker and port on different sockets: worker %d on "
+						"Worker and port on sockets: worker %d on "
 						"socket "
 						"%d (lcore %d), port %d on socket %d\n",
 						worker_id, socket_id, lcore_id, port_id,
 						rte_eth_dev_socket_id(port_id));
-			}
+			// }
 
 			LF_LOG(INFO, "worker %d (lcore %d): RX Queue %d --> TX Queue %d\n",
 					worker_id, lcore_id, queue_counter, queue_counter);
