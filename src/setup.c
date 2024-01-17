@@ -101,20 +101,20 @@ calculate_nb_mbufs(uint16_t nb_lcores, uint16_t nports, uint16_t nb_rx_queue,
 }
 
 static int
-init_mbuf_pool(uint16_t port_id, int32_t socket_id, uint32_t nb_mbuf,
+init_mbuf_pool(uint16_t port_id, uint16_t socket_id, uint32_t nb_mbuf,
 		struct rte_mempool **mb_pool)
 {
 	char s[64];
 
-	(void)snprintf(s, sizeof(s) - 1, "mbuf_pool_%u_%u", port_id, socket_id);
-	LF_LOG(INFO, "Creating mbuf pool '%s' on socket %u with %u mbufs\n", s,
+	(void)snprintf(s, sizeof(s) - 1, "mbuf_pool_%u_%d", port_id, socket_id);
+	LF_LOG(INFO, "Creating mbuf pool '%s' on socket %d with %u mbufs\n", s,
 			socket_id, nb_mbuf);
 	*mb_pool = rte_pktmbuf_pool_create(s, nb_mbuf, LF_SETUP_MEMPOOL_CACHE_SIZE,
 			LF_SETUP_METADATA_SIZE, LF_SETUP_BUF_SIZE, socket_id);
 
 	if (*mb_pool == NULL) {
 		/* log error from rte_errno */
-		LF_LOG(ERR, "Cannot create mbuf pool on socket %u: %s (%d)\n",
+		LF_LOG(ERR, "Cannot create mbuf pool on socket %d: %s (%d)\n",
 				socket_id, rte_strerror(rte_errno), rte_errno);
 		return -1;
 	} else {
@@ -529,14 +529,19 @@ lf_setup_ports(bool workers[RTE_MAX_LCORE], const struct lf_params *params,
 
 			/* check if worker runs on a different socket than the receiving
 			 * port */
-			if (socket_id != rte_eth_dev_socket_id(port_id)) {
-				LF_LOG(WARNING,
-						"Worker and port on different sockets: lcore_id %d on "
-						"socket, port %d on socket %d\n",
-						lcore_id, socket_id, port_id,
-						rte_eth_dev_socket_id(port_id));
-			}
+			// if (socket_id != rte_eth_dev_socket_id(port_id)) {
+			// 	LF_LOG(WARNING,
+			// 			"Worker and port on different sockets: lcore_id %d on "
+			// 			"socket, port %d on socket %d\n",
+			// 			lcore_id, socket_id, port_id,
+			// 			rte_eth_dev_socket_id(port_id));
+			// }
 
+			LF_LOG(WARNING,
+					"Worker and port on sockets: lcore_id %d on "
+					"socket %d, port %d on socket %d\n",
+					lcore_id, socket_id, port_id,
+					rte_eth_dev_socket_id(port_id));
 			/* assign core's socket to queues and memory pool*/
 			port_conf->rx_sockets[queue_counter] = socket_id;
 			port_conf->tx_sockets[queue_counter] = socket_id;
