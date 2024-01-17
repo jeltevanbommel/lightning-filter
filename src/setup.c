@@ -15,7 +15,7 @@
 #include "setup.h"
 #include "worker.h"
 
-#define MAX_NB_SOCKETS 8
+#define MAX_NB_SOCKETS 65536
 
 #if LF_JUMBO_FRAME
 /* allow max jumbo frame 9720 */
