@@ -41,10 +41,10 @@
 #define LF_SETUP_MAX_TX_DESC 1024
 
 struct port_queues_conf {
-	uint16_t rx_sockets[LF_SETUP_MAX_QUEUE];
+	int rx_sockets[LF_SETUP_MAX_QUEUE];
 	struct rte_mempool *rx_mbuf_pool[LF_SETUP_MAX_QUEUE];
 	uint16_t nb_rx_queue;
-	uint16_t tx_sockets[LF_SETUP_MAX_QUEUE];
+	int tx_sockets[LF_SETUP_MAX_QUEUE];
 	uint16_t nb_tx_queue;
 };
 
@@ -101,7 +101,7 @@ calculate_nb_mbufs(uint16_t nb_lcores, uint16_t nports, uint16_t nb_rx_queue,
 }
 
 static int
-init_mbuf_pool(uint16_t port_id, uint16_t socket_id, uint32_t nb_mbuf,
+init_mbuf_pool(uint16_t port_id, int socket_id, uint32_t nb_mbuf,
 		struct rte_mempool **mb_pool)
 {
 	char s[64];
@@ -124,7 +124,7 @@ init_mbuf_pool(uint16_t port_id, uint16_t socket_id, uint32_t nb_mbuf,
 
 static struct rte_mempool *pktmbuf_pool[RTE_MAX_ETHPORTS][MAX_NB_SOCKETS];
 static struct rte_mempool *
-get_mbuf_pool(uint16_t port_id, uint16_t socket_id, unsigned int nb_mbuf)
+get_mbuf_pool(uint16_t port_id, int socket_id, unsigned int nb_mbuf)
 {
 	int res;
 	// if (socket_id > MAX_NB_SOCKETS) {
@@ -146,7 +146,7 @@ get_mbuf_pool(uint16_t port_id, uint16_t socket_id, unsigned int nb_mbuf)
 }
 
 static struct rte_eth_dev_tx_buffer *
-new_tx_buffer(uint16_t socket)
+new_tx_buffer(int socket)
 {
 	struct rte_eth_dev_tx_buffer *tx_buffer;
 
@@ -440,7 +440,8 @@ lf_setup_ports(bool workers[RTE_MAX_LCORE], const struct lf_params *params,
 {
 	int res;
 	uint16_t nb_workers, nb_ports;
-	uint16_t lcore_id, socket_id, port_id;
+	uint16_t lcore_id, port_id;
+	int socket_id;
 	uint16_t queue_counter;
 	struct port_queues_conf port_queues_conf[RTE_MAX_ETHPORTS];
 	struct port_queues_conf *port_conf;
@@ -525,7 +526,7 @@ lf_setup_ports(bool workers[RTE_MAX_LCORE], const struct lf_params *params,
 			if (!workers[lcore_id]) {
 				continue;
 			}
-			socket_id = rte_lcore_to_socket_id(lcore_id);
+			socket_id = (int) rte_lcore_to_socket_id(lcore_id);
 
 			/* check if worker runs on a different socket than the receiving
 			 * port */

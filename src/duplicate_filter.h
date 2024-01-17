@@ -59,7 +59,7 @@ lf_duplicate_filter_apply(struct lf_duplicate_filter_worker *df,
  * @return new duplicate filter worker context
  */
 struct lf_duplicate_filter_worker *
-lf_duplicate_filter_worker_new(uint16_t socket, unsigned int nb_bf,
+lf_duplicate_filter_worker_new(int socket, unsigned int nb_bf,
 		unsigned int bf_period, unsigned int bf_hashes, unsigned int bf_size,
 		unsigned int hash_secret);
 
