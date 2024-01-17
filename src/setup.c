@@ -15,7 +15,7 @@
 #include "setup.h"
 #include "worker.h"
 
-#define MAX_NB_SOCKETS 65536
+#define MAX_NB_SOCKETS 65535
 
 #if LF_JUMBO_FRAME
 /* allow max jumbo frame 9720 */
@@ -127,10 +127,10 @@ static struct rte_mempool *
 get_mbuf_pool(uint16_t port_id, uint16_t socket_id, unsigned int nb_mbuf)
 {
 	int res;
-	if (socket_id > MAX_NB_SOCKETS) {
-		LF_LOG(ERR, "Socket ID too large socket_id = %d)\n", socket_id);
-		return NULL;
-	}
+	// if (socket_id > MAX_NB_SOCKETS) {
+	// 	LF_LOG(ERR, "Socket ID too large socket_id = %d)\n", socket_id);
+	// 	return NULL;
+	// }
 
 	/* initialize pool if not yet done */
 	if (pktmbuf_pool[port_id][socket_id] == NULL) {
