@@ -347,7 +347,10 @@ lf_worker_check_pkt(struct lf_worker_context *worker_context,
 	uint64_t ns_now;
 	struct lf_crypto_drkey drkey;
 	struct lf_ratelimiter_pkt_ctx rl_pkt_ctx;
-
+#if LF_CYCLE_TIMINGS
+	uint64_t start;
+	start = rte_rdtsc();
+#endif
 	/*
 	 * Obtain Current time (in ms)
 	 * Almost all modules require the current time, hence, it is obtained here
@@ -358,6 +361,11 @@ lf_worker_check_pkt(struct lf_worker_context *worker_context,
 		lf_statistics_worker_counter_inc(worker_context->statistics, error);
 		return LF_CHECK_ERROR;
 	}
+
+#if LF_CYCLE_TIMINGS
+	worker_context->lf_cycle_timers.get_time_tc += rte_rdtsc() - start;
+	start = rte_rdtsc();
+#endif
 
 	/*
 	 * Rate Limit Check
@@ -372,6 +380,11 @@ lf_worker_check_pkt(struct lf_worker_context *worker_context,
 		return LF_CHECK_SYSTEM_RATELIMITED;
 	}
 
+#if LF_CYCLE_TIMINGS
+	worker_context->lf_cycle_timers.check_ratelimit_tc += rte_rdtsc() - start;
+	start = rte_rdtsc();
+#endif
+
 	/*
 	 * MAC Check
 	 */
@@ -381,11 +394,19 @@ lf_worker_check_pkt(struct lf_worker_context *worker_context,
 	if (unlikely(res != 0)) {
 		return LF_CHECK_NO_KEY;
 	}
+#if LF_CYCLE_TIMINGS
+	worker_context->lf_cycle_timers.dr_key_tc += rte_rdtsc() - start;
+	start = rte_rdtsc();
+#endif
 	res = lf_worker_check_mac(worker_context, &drkey, pkt_data->mac,
 			pkt_data->auth_data);
 	if (unlikely(res != 0)) {
 		return LF_CHECK_INVALID_MAC;
 	}
+#if LF_CYCLE_TIMINGS
+	worker_context->lf_cycle_timers.mac_tc += rte_rdtsc() - start;
+	start = rte_rdtsc();
+#endif
 
 	/*
 	 * Timestamp Check
@@ -396,6 +417,10 @@ lf_worker_check_pkt(struct lf_worker_context *worker_context,
 		return LF_CHECK_OUTDATED_TIMESTAMP;
 	}
 
+#if LF_CYCLE_TIMINGS
+	worker_context->lf_cycle_timers.check_ts_tc += rte_rdtsc() - start;
+	start = rte_rdtsc();
+#endif
 	/*
 	 * Duplicate Check and Update
 	 * Check that the packet is not a duplicate and update the bloom filter
@@ -406,12 +431,20 @@ lf_worker_check_pkt(struct lf_worker_context *worker_context,
 		return LF_CHECK_DUPLICATE;
 	}
 
+#if LF_CYCLE_TIMINGS
+	worker_context->lf_cycle_timers.check_duplicate_tc += rte_rdtsc() - start;
+	start = rte_rdtsc();
+#endif
+
 	/*
 	 * Rate Limit Update
 	 * Consider the packet to be forwarded and update the rate limiter state.
 	 */
 	lf_worker_consume_ratelimit(pkt_data->pkt_len, &rl_pkt_ctx);
 
+#if LF_CYCLE_TIMINGS
+	worker_context->lf_cycle_timers.update_ratelimit_tc += rte_rdtsc() - start;
+#endif
 	/*
 	 * The Packet has passed all checks and can be considered valid.
 	 */

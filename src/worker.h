@@ -68,6 +68,20 @@ struct lf_worker_context {
 	struct lf_crypto_hash_ctx crypto_hash_ctx;
 	struct lf_crypto_drkey_ctx crypto_drkey_ctx;
 
+#if LF_CYCLE_TIMINGS
+	struct {
+		uint64_t get_time_tc;
+		uint64_t check_ratelimit_tc;
+		uint64_t dr_key_tc;
+		uint64_t mac_tc;
+		uint64_t check_ts_tc;
+		uint64_t check_duplicate_tc;
+		uint64_t update_ratelimit_tc;
+		uint64_t hash_pkt_tc;
+		uint64_t total_pkts;
+	} lf_cycle_timers;
+#endif
+
 	/* Quiescent State Variable */
 	struct rte_rcu_qsbr *qsv;
 } __rte_cache_aligned;

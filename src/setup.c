@@ -109,6 +109,92 @@ calculate_nb_mbufs(uint16_t nb_rx_ports, uint16_t nb_tx_ports,
 	/* clang-format on */
 }
 
+typedef uint64_t tsc_t;
+static int tsc_dynfield_offset = -1;
+
+static int hwts_dynfield_offset = -1; //TODO: get the field.
+
+static inline rte_mbuf_timestamp_t *
+hwts_field(struct rte_mbuf *mbuf)
+{
+	return RTE_MBUF_DYNFIELD(mbuf,
+			hwts_dynfield_offset, rte_mbuf_timestamp_t *);
+}
+
+static inline tsc_t *
+tsc_field(struct rte_mbuf *mbuf)
+{
+	return RTE_MBUF_DYNFIELD(mbuf, tsc_dynfield_offset, tsc_t *);
+}
+
+
+static struct {
+	uint64_t total_cycles;
+	uint64_t total_queue_cycles;
+	uint64_t total_pkts;
+} latency_numbers;
+
+
+
+#define TICKS_PER_CYCLE_SHIFT 16
+static uint64_t ticks_per_cycle_mult;
+
+static uint16_t
+add_timestamps(uint16_t port __rte_unused, uint16_t qidx __rte_unused,
+		struct rte_mbuf **pkts, uint16_t nb_pkts,
+		uint16_t max_pkts __rte_unused, void *_ __rte_unused)
+{
+	unsigned i;
+	uint64_t now = rte_rdtsc();
+
+	for (i = 0; i < nb_pkts; i++)
+		*tsc_field(pkts[i]) = now;
+	return nb_pkts;
+}
+int hw_timestamping = 0;
+
+static uint16_t
+sample_latency(uint16_t port, uint16_t qidx __rte_unused,
+		struct rte_mbuf **pkts, uint16_t nb_pkts, void *_ __rte_unused)
+{
+	uint64_t cycles = 0;
+	uint64_t queue_ticks = 0;
+	uint64_t now = rte_rdtsc();
+	uint64_t ticks;
+	unsigned i;
+
+	if (hw_timestamping)
+		rte_eth_read_clock(port, &ticks);
+
+	for (i = 0; i < nb_pkts; i++) {
+		cycles += now - *tsc_field(pkts[i]);
+		if (hw_timestamping)
+			queue_ticks += ticks - *hwts_field(pkts[i]);
+	}
+
+	latency_numbers.total_cycles += cycles;
+	if (hw_timestamping)
+		latency_numbers.total_queue_cycles += (queue_ticks
+			* ticks_per_cycle_mult) >> TICKS_PER_CYCLE_SHIFT;
+
+	latency_numbers.total_pkts += nb_pkts;
+
+	if (latency_numbers.total_pkts > ( 1000000ULL)) { //1000ULL
+		printf("Latency = %"PRIu64" cycles\n",
+		latency_numbers.total_cycles / latency_numbers.total_pkts);
+		if (hw_timestamping) {
+			printf("Latency from HW = %"PRIu64" cycles\n",
+			   latency_numbers.total_queue_cycles
+			   / latency_numbers.total_pkts);
+		}
+		latency_numbers.total_cycles = 0;
+		latency_numbers.total_queue_cycles = 0;
+		latency_numbers.total_pkts = 0;
+	}
+	return nb_pkts;
+}
+
+
 int
 pool_init(int32_t socket_id, uint32_t nb_mbuf, struct rte_mempool **mb_pool)
 {
@@ -520,6 +606,9 @@ port_init(uint16_t port_id, struct port_queues_conf *port_conf,
 		rxq_conf.offloads = local_port_conf.rxmode.offloads;
 		res = rte_eth_rx_queue_setup(port_id, rx_queue_id, nb_rxd, socket_id,
 				&rxq_conf, mb_pool);
+#if LF_CYCLE_TIMINGS_TOTAL
+		rte_eth_add_rx_callback(port_id, rx_queue_id, add_timestamps, NULL);
+#endif
 		if (res < 0) {
 			LF_LOG(ERR, "rte_eth_rx_queue_setup: err=%d, port=%d\n", res,
 					port_id);
@@ -537,6 +626,9 @@ port_init(uint16_t port_id, struct port_queues_conf *port_conf,
 		txq_conf.offloads = local_port_conf.txmode.offloads;
 		res = rte_eth_tx_queue_setup(port_id, tx_queue_id, nb_txd, socket_id,
 				&txq_conf);
+#if LF_CYCLE_TIMINGS_TOTAL
+		rte_eth_add_tx_callback(port_id, tx_queue_id, sample_latency, NULL);
+#endif
 		if (res < 0) {
 			LF_LOG(ERR, "rte_eth_tx_queue_setup: err=%d, port=%d\n", res,
 					port_id);
@@ -830,6 +922,21 @@ lf_setup_ports(uint16_t nb_port_queues, const uint16_t lcores[LF_MAX_WORKER],
 
 	/* all workers have been assigned a receiving port */
 	assert(worker_id == nb_port_queues);
+
+#if LF_CYCLE_TIMINGS_TOTAL
+	static const struct rte_mbuf_dynfield tsc_dynfield_desc = {
+	.name = "dynfield_tsc",
+	.size = sizeof(tsc_t),
+	.align = __alignof__(tsc_t),
+	};
+
+	tsc_dynfield_offset =
+		rte_mbuf_dynfield_register(&tsc_dynfield_desc);
+	if (tsc_dynfield_offset < 0){
+		LF_LOG(ERR, "Cannot register mbuf field\n");
+		return -1;
+	}
+#endif
 
 	if (ct_port_queue) {
 		LF_LOG(DEBUG, "Initialize signal ports...\n");

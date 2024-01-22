@@ -99,6 +99,10 @@ option_compile_definition(LF_WORKER_IGNORE_HASH_CHECK "Ignore hash check result"
 option_compile_definition(LF_WORKER_IGNORE_PATH_TIMESTAMP_CHECK "Ignore path timestamp check result" OFF)
 option_compile_definition(LF_WORKER_IGNORE_KEY_VALIDITY_CHECK "Ignore the validity of the key and just use it" OFF)
 
+
+option_compile_definition(LF_CYCLE_TIMINGS "Measure cycles taken up by functionality in the worker" OFF)
+option_compile_definition(LF_CYCLE_TIMINGS_TOTAL "Measure cycles taken up by functionality in the entire DPDK pipeline" OFF)
+
 # Compiler Options
 option(NO_UNUSED "Disable compiler warnings for unused variables" OFF)
 if(NO_UNUSED)

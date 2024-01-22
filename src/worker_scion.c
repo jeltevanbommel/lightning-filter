@@ -652,8 +652,37 @@ handle_inbound_pkt_with_lf_hdr(struct lf_worker_context *worker_context,
 		return check_state;
 	}
 
+#if LF_CYCLE_TIMINGS
+	uint64_t start = rte_rdtsc();
+#endif
+
 	/* Only if all checks are passed, the packet hash is checked. */
 	res = check_pkt_hash(worker_context, m, parsed_pkt, parsed_spao);
+	#if LF_CYCLE_TIMINGS
+	worker_context->lf_cycle_timers.hash_pkt_tc += rte_rdtsc() - start;
+	worker_context->lf_cycle_timers.total_pkts +=1;
+	if (worker_context->lf_cycle_timers.total_pkts > ( 1000000ULL)) {
+		printf(" Timing Dump; GetTimestamp= %"PRIu64" cycles, CheckRateLimit= %"PRIu64" cycles, DRKey= %"PRIu64" cycles, MAC= %"PRIu64" cycles, CheckTimestamp= %"PRIu64" cycles, CheckDuplicate= %"PRIu64" cycles, UpdateRatelimit= %"PRIu64" cycles, HashPkt= %"PRIu64" cycles \n",
+		worker_context->lf_cycle_timers.get_time_tc / worker_context->lf_cycle_timers.total_pkts,
+		worker_context->lf_cycle_timers.check_ratelimit_tc / worker_context->lf_cycle_timers.total_pkts,
+		worker_context->lf_cycle_timers.dr_key_tc / worker_context->lf_cycle_timers.total_pkts,
+		worker_context->lf_cycle_timers.mac_tc / worker_context->lf_cycle_timers.total_pkts,
+		worker_context->lf_cycle_timers.check_ts_tc / worker_context->lf_cycle_timers.total_pkts,
+		worker_context->lf_cycle_timers.check_duplicate_tc / worker_context->lf_cycle_timers.total_pkts,
+		worker_context->lf_cycle_timers.update_ratelimit_tc / worker_context->lf_cycle_timers.total_pkts,
+		worker_context->lf_cycle_timers.hash_pkt_tc / worker_context->lf_cycle_timers.total_pkts);
+		
+		worker_context->lf_cycle_timers.get_time_tc = 0;
+		worker_context->lf_cycle_timers.check_ratelimit_tc = 0;
+		worker_context->lf_cycle_timers.dr_key_tc = 0;
+		worker_context->lf_cycle_timers.mac_tc = 0;
+		worker_context->lf_cycle_timers.check_ts_tc = 0;
+		worker_context->lf_cycle_timers.check_duplicate_tc = 0;
+		worker_context->lf_cycle_timers.update_ratelimit_tc = 0;
+		worker_context->lf_cycle_timers.hash_pkt_tc = 0;
+		worker_context->lf_cycle_timers.total_pkts = 0;
+	}
+#endif
 	if (res == 0) {
 		return LF_CHECK_VALID;
 	} else {
