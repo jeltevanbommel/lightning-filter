@@ -102,6 +102,8 @@ option_compile_definition(LF_WORKER_IGNORE_KEY_VALIDITY_CHECK "Ignore the validi
 
 option_compile_definition(LF_CYCLE_TIMINGS "Measure cycles taken up by functionality in the worker" OFF)
 option_compile_definition(LF_CYCLE_TIMINGS_TOTAL "Measure cycles taken up by functionality in the entire DPDK pipeline" OFF)
+option_compile_definition(LF_CYCLE_TIMINGS_TOTAL_DUMP "After how many cycles should the packet counters be dumped" 10000000ULL)
+option_compile_definition(LF_CYCLE_TIMINGS_DUMP "After how many cycles should the packet counters be dumped" 1000000ULL)
 
 # Compiler Options
 option(NO_UNUSED "Disable compiler warnings for unused variables" OFF)

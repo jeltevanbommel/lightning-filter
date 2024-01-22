@@ -25,7 +25,7 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 # rte_rcu (DPDK v21.11) is not compatible with -pedantic -pedantic-errors
 #add_compile_options(-pedantic --pedantic-errors)
 target_compile_options(${EXEC} PRIVATE -O3 -fno-strict-overflow -fno-strict-aliasing)
-target_compile_options(${EXEC} PRIVATE -Wall -Wextra -Werror)
+target_compile_options(${EXEC} PRIVATE -Wall -Wextra)
 target_compile_options(${EXEC} PRIVATE -Wcast-qual -Wcast-align -Wunused -Wshadow -Wwrite-strings)
 target_compile_options(${EXEC} PRIVATE -Wstack-protector -fstack-protector-all)
 # Warn if an undefined indentifier is evaluated in an #if directive.

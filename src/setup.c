@@ -179,7 +179,7 @@ sample_latency(uint16_t port, uint16_t qidx __rte_unused,
 
 	latency_numbers.total_pkts += nb_pkts;
 
-	if (latency_numbers.total_pkts > ( 1000000ULL)) { //1000ULL
+	if (latency_numbers.total_pkts > ( LF_CYCLE_TIMINGS_TOTAL_DUMP)) { //1000ULL
 		printf("Latency = %"PRIu64" cycles\n",
 		latency_numbers.total_cycles / latency_numbers.total_pkts);
 		if (hw_timestamping) {
