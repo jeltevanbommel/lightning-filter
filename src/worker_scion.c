@@ -662,7 +662,7 @@ handle_inbound_pkt_with_lf_hdr(struct lf_worker_context *worker_context,
 	worker_context->lf_cycle_timers.hash_pkt_tc += rte_rdtsc() - start;
 	worker_context->lf_cycle_timers.total_pkts +=1;
 	if (worker_context->lf_cycle_timers.total_pkts > ( LF_CYCLE_TIMINGS_DUMP)) {
-		LF_WORKER_LOG_DP(INFO, " Timing Dump; GetTimestamp= %"PRIu64" cycles, CheckRateLimit= %"PRIu64" cycles, DRKey= %"PRIu64" cycles, MAC= %"PRIu64" cycles, CheckTimestamp= %"PRIu64" cycles, CheckDuplicate= %"PRIu64" cycles, UpdateRatelimit= %"PRIu64" cycles, HashPkt= %"PRIu64" cycles \n",
+		printf(" Timing Dump; GetTimestamp= %"PRIu64" cycles, CheckRateLimit= %"PRIu64" cycles, DRKey= %"PRIu64" cycles, MAC= %"PRIu64" cycles, CheckTimestamp= %"PRIu64" cycles, CheckDuplicate= %"PRIu64" cycles, UpdateRatelimit= %"PRIu64" cycles, HashPkt= %"PRIu64" cycles \n",
 		worker_context->lf_cycle_timers.get_time_tc / worker_context->lf_cycle_timers.total_pkts,
 		worker_context->lf_cycle_timers.check_ratelimit_tc / worker_context->lf_cycle_timers.total_pkts,
 		worker_context->lf_cycle_timers.dr_key_tc / worker_context->lf_cycle_timers.total_pkts,
