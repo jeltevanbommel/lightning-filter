@@ -780,7 +780,8 @@ lf_setup_ports(uint16_t nb_port_queues, const uint16_t lcores[LF_MAX_WORKER],
 				queue_counter++) {
 			lcore_id = lcores[worker_id];
 
-			socket_id = rte_lcore_to_socket_id(lcore_id);
+			// socket_id = rte_lcore_to_socket_id(lcore_id);
+			socket_id = rte_eth_dev_socket_id(port_id);
 
 			/* check if worker runs on a different socket than the receiving
 			 * port */
