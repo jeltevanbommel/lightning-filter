@@ -160,6 +160,18 @@ lf_duplicate_filter_worker_new(uint16_t socket, unsigned int nb_bf,
 				sizeof(struct lf_duplicate_filter_worker));
 		return NULL;
 	}
+	// size_t sz = rte_rcu_qsbr_get_memsize(1);
+	// *qsv = (struct rte_rcu_qsbr *)rte_zmalloc(NULL, sz, RTE_CACHE_LINE_SIZE, socket);
+	// if (*qsv == NULL) {
+	// 	LF_LOG(ERR, "Unable to allocate QSBR\n");
+	// 	return -1;
+	// }
+
+	// if (rte_rcu_qsbr_init(*qsv, nb_qs_vars) != 0) {
+	// 	LF_LOG(ERR, "RCU QSBR init failed\n");
+	// 	(void)rte_free(*qsv);
+	// 	return -1;
+	// }
 
 	/* assign all arrays */
 	res = 0;
@@ -198,6 +210,7 @@ lf_duplicate_filter_worker_new(uint16_t socket, unsigned int nb_bf,
 	df_worker->bf_hashes = bf_hashes;
 	df_worker->secret = hash_secret;
 	df_worker->nb_bf = nb_bf;
+	// df_worker->qsv = qsv;
 
 	return df_worker;
 }

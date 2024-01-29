@@ -526,6 +526,7 @@ main(int argc, char **argv)
 	for (worker_id = 0; worker_id < lf_nb_workers; ++worker_id) {
 		worker_contexts[worker_id].duplicate_filter =
 				duplicate_filter.workers[worker_id];
+		duplicate_filter.workers[worker_id].qsv = qsv;
 	}
 
 	/*
@@ -597,6 +598,28 @@ main(int argc, char **argv)
 	if (params.ct_worker_enabled) {
 		lf_worker_ct_run(&worker_ct);
 	}
+
+
+	while (likely(!lf_force_quit)) {
+
+		int worker_id;
+		for (worker_id = 0; worker_id < duplicate_filter->nb_workers; ++worker_id) {
+			struct lf_duplicate_filter_worker *df =  duplicate_filter->workers[worker_id];
+			if (unlikely(sat_sub_u64(ns_now, df->bf_period) > df->last_rotation)) {
+				df->current_bf = (df->current_bf + 1U) % df->nb_bf;
+				uint8_t *new_standby_filter = df->bf_arrays[df->current_bf]
+				df->bf_arrays[current_bf] = df->current_standby_filter;
+				df->current_standby_filter = new_standby_filter;
+				(void)rte_rcu_qsbr_synchronize(df->qsv, RTE_QSBR_THRID_INVALID); 
+				(void)memset(df->current_standby_filter, 0, df->bf_size);
+				df->last_rotation = ns_now;
+				LF_LOG(INFO, "reset %d",worker_id);
+			}
+		}
+
+		
+	}
+
 
 	RTE_LCORE_FOREACH_WORKER(lcore_id) {
 		(void)rte_eal_wait_lcore(lcore_id);

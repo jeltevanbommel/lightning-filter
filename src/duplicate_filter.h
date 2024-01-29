@@ -28,6 +28,9 @@ struct lf_duplicate_filter_worker {
 	unsigned int current_bf;
 	unsigned int nb_bf;
 
+	/* Workers' Quiescent State Variable */
+	struct rte_rcu_qsbr *qsv;
+	uint8_t *current_standby_filter;
 	/*
 	 * It is required that bf_size*8 is a power of 2.
 	 * This enables an efficient modulo computation simply using a mask:
