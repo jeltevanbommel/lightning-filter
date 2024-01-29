@@ -27,6 +27,7 @@ struct lf_duplicate_filter_worker {
 	unsigned int secret;
 	unsigned int current_bf;
 	unsigned int nb_bf;
+	uint8_t nulled;
 
 	/* Workers' Quiescent State Variable */
 	struct rte_rcu_qsbr *qsv;

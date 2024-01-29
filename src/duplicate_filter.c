@@ -115,10 +115,24 @@ int
 lf_duplicate_filter_apply(struct lf_duplicate_filter_worker *df,
 		const uint8_t key[16], uint64_t ns_now)
 {
+	(void)ns_now;
+
+	unsigned int next_bf;
+	uint8_t *new_standby_filter;
 	/* periodically rotate bloom filter */
 	if (unlikely(sat_sub_u64(ns_now, df->bf_period) > df->last_rotation)) {
-		df->current_bf = (df->current_bf + 1U) % df->nb_bf;
-		(void)memset(df->bf_arrays[df->current_bf], 0, df->bf_size);
+		next_bf = (df->current_bf + 1U) % df->nb_bf;
+		new_standby_filter = df->bf_arrays[next_bf];
+		df->bf_arrays[next_bf] = df->current_standby_filter;
+		df->current_bf = next_bf;
+		df->current_standby_filter = new_standby_filter;
+		df->nulled = 0;
+		// df->last_rotation = ns_now;
+		// (void)rte_rcu_qsbr_synchronize(df->qsv, RTE_QSBR_THRID_INVALID); 
+		// (void)memset(new_standby_filter, 0, df->bf_size);
+
+		// df->current_bf = (df->current_bf + 1U) % df->nb_bf;
+		// (void)memset(df->bf_arrays[df->current_bf], 0, df->bf_size);
 
 		df->last_rotation = ns_now;
 	}
@@ -178,7 +192,6 @@ lf_duplicate_filter_worker_new(uint16_t socket, unsigned int nb_bf,
 	for (i = 0; i < nb_bf; ++i) {
 		df_worker->bf_arrays[i] =
 				rte_zmalloc_socket(NULL, bf_size, RTE_CACHE_LINE_SIZE, socket);
-
 		if (df_worker->bf_arrays[i] == NULL) {
 			LF_DUPLICATE_FILTER_LOG(ERR,
 					"Unable to allocate %d bytes for bloom filter\n", bf_size);
@@ -186,7 +199,12 @@ lf_duplicate_filter_worker_new(uint16_t socket, unsigned int nb_bf,
 			break;
 		}
 	}
-
+	df_worker->current_standby_filter = rte_zmalloc_socket(NULL, bf_size, RTE_CACHE_LINE_SIZE, socket);
+	if (df_worker->current_standby_filter  == NULL) {
+		LF_DUPLICATE_FILTER_LOG(ERR,
+				"Unable to allocate %d bytes for bloom filter\n", bf_size);
+		res = -1;
+	}
 	/* check if an error occurred, i.e., it the loop was terminated early */
 	if (res != 0) {
 		/* free allocated memory */
@@ -196,6 +214,9 @@ lf_duplicate_filter_worker_new(uint16_t socket, unsigned int nb_bf,
 				break;
 			}
 			rte_free(df_worker->bf_arrays[i]);
+		}
+		if (df_worker->current_standby_filter  == NULL) {
+			rte_free(df_worker->current_standby_filter);
 		}
 		rte_free(df_worker);
 		return NULL;
