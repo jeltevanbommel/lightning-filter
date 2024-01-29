@@ -623,37 +623,27 @@ main(int argc, char **argv)
 		
 	// }
 	unsigned int nb_workers = duplicate_filter.nb_workers;
-	// uint8_t *new_standby_filter;
-struct lf_duplicate_filter_worker *df;
+	unsigned int next_bf;
+	uint8_t *new_standby_filter;
+	struct lf_duplicate_filter_worker *df;
 	uint64_t current_tsc, last_rotation_tsc, period_tsc;
 	last_rotation_tsc = rte_rdtsc();
 	period_tsc =
-			(uint64_t)((double)rte_get_timer_hz() * 0.1);
+			(uint64_t)((double)rte_get_timer_hz() * 1);
 	while (likely(!lf_force_quit)) {
 		current_tsc = rte_rdtsc();
 		if (current_tsc - last_rotation_tsc >= period_tsc) {
-		// int worker_id;
-		for (worker_id = 0; worker_id < nb_workers; ++worker_id) {
-			
-			
-			// lf_time_worker_get(&worker_contexts[worker_id].time, &ns_now);
-			df =  duplicate_filter.workers[worker_id];
-			if (unlikely(df->nulled  == 0)){
-			// if (unlikely(sat_sub_u64(ns_now, df->bf_period) > df->last_rotation)) {
-				// next_bf = (df->current_bf + 1U) % df->nb_bf;
-				// new_standby_filter = df->bf_arrays[next_bf];
-				// df->bf_arrays[next_bf] = df->current_standby_filter;
-				// df->current_bf = next_bf;
-				// df->current_standby_filter = new_standby_filter;
-				// // df->last_rotation = ns_now;
-				// (void)rte_rcu_qsbr_synchronize(df->qsv, RTE_QSBR_THRID_INVALID); 
+			for (worker_id = 0; worker_id < nb_workers; ++worker_id) {
+				df =  duplicate_filter.workers[worker_id];
+				next_bf = (df->current_bf + 1U) % df->nb_bf;
+				new_standby_filter = df->bf_arrays[next_bf];
+				df->bf_arrays[next_bf] = df->current_standby_filter;
+				df->current_bf = next_bf;
+				df->current_standby_filter = new_standby_filter;
+				(void)rte_rcu_qsbr_synchronize(df->qsv, RTE_QSBR_THRID_INVALID); 
 				(void)memset(df->current_standby_filter, 0, df->bf_size);
-				df->nulled = 1;
-				// LF_LOG(INFO, "reset worker %d to current_bf %d : %p\n",worker_id, df->current_bf, new_standby_filter);
-			// }
 			}
-		}
-		last_rotation_tsc = current_tsc;
+			last_rotation_tsc = current_tsc;
 		}
 
 		

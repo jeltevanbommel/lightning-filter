@@ -117,25 +117,25 @@ lf_duplicate_filter_apply(struct lf_duplicate_filter_worker *df,
 {
 	(void)ns_now;
 
-	unsigned int next_bf;
-	uint8_t *new_standby_filter;
-	/* periodically rotate bloom filter */
-	if (unlikely(sat_sub_u64(ns_now, df->bf_period) > df->last_rotation)) {
-		next_bf = (df->current_bf + 1U) % df->nb_bf;
-		new_standby_filter = df->bf_arrays[next_bf];
-		df->bf_arrays[next_bf] = df->current_standby_filter;
-		df->current_bf = next_bf;
-		df->current_standby_filter = new_standby_filter;
-		df->nulled = 0;
-		// df->last_rotation = ns_now;
-		// (void)rte_rcu_qsbr_synchronize(df->qsv, RTE_QSBR_THRID_INVALID); 
-		// (void)memset(new_standby_filter, 0, df->bf_size);
+	// unsigned int next_bf;
+	// uint8_t *new_standby_filter;
+	// /* periodically rotate bloom filter */
+	// if (unlikely(sat_sub_u64(ns_now, df->bf_period) > df->last_rotation)) {
+	// 	next_bf = (df->current_bf + 1U) % df->nb_bf;
+	// 	new_standby_filter = df->bf_arrays[next_bf];
+	// 	df->bf_arrays[next_bf] = df->current_standby_filter;
+	// 	df->current_bf = next_bf;
+	// 	df->current_standby_filter = new_standby_filter;
+	// 	df->nulled = 0;
+	// 	// df->last_rotation = ns_now;
+	// 	// (void)rte_rcu_qsbr_synchronize(df->qsv, RTE_QSBR_THRID_INVALID); 
+	// 	// (void)memset(new_standby_filter, 0, df->bf_size);
 
-		// df->current_bf = (df->current_bf + 1U) % df->nb_bf;
-		// (void)memset(df->bf_arrays[df->current_bf], 0, df->bf_size);
+	// 	// df->current_bf = (df->current_bf + 1U) % df->nb_bf;
+	// 	// (void)memset(df->bf_arrays[df->current_bf], 0, df->bf_size);
 
-		df->last_rotation = ns_now;
-	}
+	// 	df->last_rotation = ns_now;
+	// }
 
 	return check_key_add_key(df->bf_arrays, df->nb_bf, df->current_bf,
 			df->modulo_mask, df->bf_hashes, df->secret, key);
