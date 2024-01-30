@@ -16,7 +16,7 @@ else()
 endif()
 add_compile_definitions(LF_WORKER=${LF_WORKER})
 add_compile_definitions(LF_WORKER_${LF_WORKER}=1)
-
+add_compile_definitions(DATA_SIZE=$(DATA_SIZE))
 set(LF_DRKEY_FETCHER "SCION" CACHE STRING "The drkey fetcher type (SCION, MOCK).")
 if(LF_DRKEY_FETCHER STREQUAL "SCION")
     # add SCION DRKey fetcher implementation
