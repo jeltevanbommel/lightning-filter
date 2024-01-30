@@ -30,8 +30,9 @@
 #else
 #define LF_SETUP_BUF_SIZE RTE_MBUF_DEFAULT_BUF_SIZE
 #endif
-#define DATA_SIZE 1500
-
+#ifndef DATA_SIZE
+#define DATA_SIZE 100
+#endif
 /* lcore assignemnts */
 uint16_t lf_nb_workers;
 uint16_t lf_worker_lcores[RTE_MAX_LCORE];
