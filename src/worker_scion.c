@@ -271,7 +271,7 @@ hash_cmn_hdr(struct lf_crypto_hash_ctx *ctx,
 }
 
 static inline int
-hash_path_hdr(struct lf_worker_context *worker_context, void *path_hdr,
+hash_path_hdr(struct lf_crypto_hash_ctx *ctx, void *path_hdr,
 		uint8_t path_type, uint32_t path_header_len)
 {
 	switch (path_type) {
@@ -346,7 +346,7 @@ hash_path_hdr(struct lf_worker_context *worker_context, void *path_hdr,
 			hop_field += 1;
 		}
 
-		lf_crypto_hash_update(&worker_context->crypto_hash_ctx,
+		lf_crypto_hash_update(ctx,
 				(uint8_t *)path_hdr, path_header_len);
 
 		/* PathMeta Header reset */
@@ -385,14 +385,14 @@ hash_path_hdr(struct lf_worker_context *worker_context, void *path_hdr,
 				(struct scion_path_hop_hdr *)(scion_path_info_hdr + 1);
 		uint8_t router_alerts_old = hop_field_1->rie;
 		hop_field_1->rie &= 0xFC; // 0b11111100;
-		lf_crypto_hash_update(&worker_context->crypto_hash_ctx,
+		lf_crypto_hash_update(ctx,
 				(uint8_t *)path_hdr,
 				SCION_PATH_INFOFIELD_SIZE + SCION_PATH_HOPFIELD_SIZE);
 		hop_field_1->rie = router_alerts_old;
 
 		/* add second hop field (with everything zeroed) */
 		uint8_t hop_field_zeroed[SCION_PATH_HOPFIELD_SIZE] = { 0 };
-		lf_crypto_hash_update(&worker_context->crypto_hash_ctx,
+		lf_crypto_hash_update(ctx,
 				hop_field_zeroed, SCION_PATH_HOPFIELD_SIZE);
 		break;
 	}
@@ -426,7 +426,7 @@ compute_pkt_hash(struct lf_worker_context *worker_context, struct rte_mbuf *m,
 	}
 
 	/* hash path header */
-	res = hash_path_hdr(worker_context, parsed_pkt->scion_path_hdr,
+	res = hash_path_hdr(&worker_context->crypto_hash_ctx, parsed_pkt->scion_path_hdr,
 			parsed_pkt->scion_cmn_hdr->path_type,
 			parsed_pkt->scion_path_hdr_len);
 	if (unlikely(res != 0)) {

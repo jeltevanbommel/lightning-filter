@@ -4,20 +4,26 @@ include(CMakeLint.cmake)
 
 # Define an option to build the executable statically
 option(BUILD_STATIC "Build a static executable" ON)
+option(BUILD_MICROBENCHMARK "Build the microbenchmark for hashing packets" ON)
 if(BUILD_STATIC)
   set(EXEC lfstatic)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
 else()
   set(EXEC lfshared)
 endif()
-
+if(BUILD_MICROBENCHMARK)
+  set(EXEC microbenchmark)
+  add_executable(${EXEC} microbenchmark.c)
+else()
 # Define executable
-add_executable(${EXEC} main.c)
+  add_executable(${EXEC} main.c)
 
-# Add symbolic link to the binary after the target has been built.
-add_custom_command(TARGET ${EXEC} POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E create_symlink
-                   ${EXEC} lf)
+  # Add symbolic link to the binary after the target has been built.
+  add_custom_command(TARGET ${EXEC} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E create_symlink
+                    ${EXEC} lf)
+endif()
+
 
 # Set C standard and compile flags
 set(CMAKE_C_STANDARD 11)
